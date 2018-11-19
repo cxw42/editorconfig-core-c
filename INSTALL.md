@@ -48,7 +48,7 @@ could be used when generating the project file:
     -DBUILD_STATICALLY_LINKED_EXE=[ON|OFF]  Default: OFF
     If this option is on, the executable will be linked statically to all
     libraries. On MSVC, this means that EditorConfig will be statically
-    linked to the executable. On GCC, this means all libraries (glibc and 
+    linked to the executable. On GCC, this means all libraries (glibc and
     EditorConfig) are statically linked to the executable.
     e.g. cmake -DBUILD_STATICALLY_LINKED_EXE=ON .
 
@@ -93,5 +93,70 @@ On Windows, via Developer Command Prompt for Visual Studio:
 
     msbuild all_build.vcxproj /p:Configuration=Release
 
+MinGW-w64 installation on Windows
+=================================
+
+This is a detailed walkthrough of installing [pcre][] and editorconfig-core-c
+on Windows using the [MSYS2][] package of [MinGW-w64][].  The CMake details
+are based on `appveyor.yml` in this repo.
+
+### Unpacking
+
+- Download and install MSYS2 following the instructions on the [MSYS2][] page.
+  Make a note of where MSYS2 is installed.  If you installed for only yourself,
+  it might be under `msys2_32` or `msys2_64` in your home directory.
+  I will call this `%MSYS`.
+- Download and install CMake for Windows from
+  [the download page](https://cmake.org/download/).
+- Make a project directory.  This example uses `c:\proj`.
+- Download and install [7-zip][].
+- Download the latest `pcre-*` (NOT `pcre2-*`) from the
+  [pcre download server](https://ftp.pcre.org/pub/pcre/).  I tested with
+  pcre-8.42.
+- Unzip pcre under your project directory, e.g., `c:\proj\pcre-8.42`,
+  using 7-zip
+- Clone editorconfig-core-c under your project directory, e.g.,
+  `c:\proj\editorconfig-core-c`
+
+### Setting up the build environment
+
+- Run `cmd`
+- Set the path:
+
+        path "c:\program files (x86)\cmake\bin";%userprofile%\msys2_32\mingw32\bin;%userprofile%;\msys2_32\mingw32\i686-w64-mingw32\bin;%path%
+
+  This example assumes you installed x86 CMake, and that MSYS2 is in `msys2_32` under your home directory.
+
+- Build PCRE as follows.  Adjust the paths as necessary.
+
+      cd c:\proj\pcre-8.42
+      mkdir build-mingw
+      cd build-mingw
+      cmake -G "MinGW Makefiles" -DPCRE_STATIC_RUNTIME="ON" -DBUILD_SHARED_LIBS="OFF" -DPCRE_BUILD_PCRECPP=OFF -DPCRE_BUILD_PCREGREP=OFF -DPCRE_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX="..\dist" ..
+      cmake --build . --target install
+
+- Build editorconfig as follows.  Adjust the paths as necessary.
+
+      cd c:\proj\editorconfig-core-c
+      mkdir build-mingw
+      cd build-mingw
+      cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="../dist" -DPCRE_STATIC="ON" -DCMAKE_PREFIX_PATH="../../pcre-8.42/dist" ..
+      cmake --build . --target install
+
+- Run the tests as follows.  Still in the `editorconfig-core-c\build-mingw`
+  directory:
+
+      ctest . -j4
+
+  All tests should pass except for `utf_8_char`, which is a
+  [known issue](https://github.com/editorconfig/editorconfig-core-c/pull/31#issue-154810185).
+
+Now you have an editorconfig binary in
+`editorconfig-core-c\bin\editorconfig.exe`.  Put it in your `PATH` or wherever
+your editor can find it!
+
+[7-zip]: https://7-zip.org/
 [cmake]: http://www.cmake.org
+[MinGW-w64]: https://mingw-w64.org/doku.php
+[MSYS2]: http://www.msys2.org/
 [pcre]: http://pcre.org
