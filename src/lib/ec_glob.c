@@ -38,6 +38,8 @@
 
 #include "ec_glob.h"
 
+#include <stdio.h>
+
 /* Special characters */
 const char ec_special_chars[] = "?[]\\*-{},";
 
@@ -336,6 +338,7 @@ int ec_glob(const char *pattern, const char *string)
 
     pcre2_code_free(re); /* ^\\d+\\.\\.\\d+$ */
 
+    fprintf(stderr, "Regex qr'%s'\n", pcre_str);
     re = pcre2_compile(pcre_str, PCRE2_ZERO_TERMINATED, 0, &error_code, &erroffset, NULL);
 
     if (!re)        /* failed to compile */

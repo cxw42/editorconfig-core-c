@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2011-2012 EditorConfig Team
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,6 +29,8 @@
 #include "misc.h"
 #include "ini.h"
 #include "ec_glob.h"
+
+#include <stdio.h>
 
 /* could be used to fast locate these properties in an
  * array_editorconfig_name_value */
@@ -100,7 +102,7 @@ static void reset_special_property_name_value_pointers(
         array_editorconfig_name_value* aenv)
 {
     int         i;
-    
+
     for (i = 0; i < aenv->current_value_count; ++ i)
         set_special_property_name_value_pointers(
                 &aenv->name_values[i], &aenv->spnvp);
@@ -257,6 +259,8 @@ static int ini_handler(void* hfp, const char* section, const char* name,
     }
     strcpy(ptr_pattern, ptr_prev);
 
+    fprintf(stderr, "EC dir '%s', section '%s', file '%s' => intermediate pattern '%s'\n",
+            hfparam->editorconfig_file_dir, section, hfparam->full_filename, pattern);
     if (strchr(section, '/') == NULL) /* No / is found, append '[star][star]/' */
         strcat(pattern, "**/");
     else if (*section != '/') /* The first char is not '/' but section contains
@@ -264,6 +268,9 @@ static int ini_handler(void* hfp, const char* section, const char* name,
         strcat(pattern, "/");
 
     strcat(pattern, section);
+
+    fprintf(stderr, "EC dir '%s', section '%s', file '%s' => pattern '%s'\n",
+            hfparam->editorconfig_file_dir, section, hfparam->full_filename, pattern);
 
     if (ec_glob(pattern, hfparam->full_filename) == 0) {
         if (array_editorconfig_name_value_add(&hfparam->array_name_value, name,
@@ -523,6 +530,10 @@ int editorconfig_parse(const char* full_filename, editorconfig_handle h)
     for (config_file = config_files; *config_file != NULL; config_file++) {
         int ini_err_num;
         err_num = split_file_path(&hfp.editorconfig_file_dir, NULL, *config_file);
+        fprintf(stderr, "ec file dir '%s', config file '%s'\n",
+            (hfp.editorconfig_file_dir == NULL ? "NULL" :
+             hfp.editorconfig_file_dir), *config_file);
+
         if (err_num == -1) {
           err_num = EDITORCONFIG_PARSE_MEMORY_ERROR;
           goto cleanup;
